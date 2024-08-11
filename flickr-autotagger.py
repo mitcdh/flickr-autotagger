@@ -1,9 +1,7 @@
 import flickrapi
 from openai import OpenAI, BadRequestError
-import requests
 import json
 import os
-
 
 # Function to load environment variables from .env file if they are not already set
 def load_env_variables():
@@ -15,7 +13,6 @@ def load_env_variables():
         print("python-dotenv is not installed. Skipping .env file loading.")
     except Exception as e:
         print(f"Failed to load .env file: {e}")
-
 
 # OpenAI Model and costings
 OPENAI_MODEL = "gpt-4o-2024-08-06"
@@ -40,35 +37,28 @@ if not all([flickr_api_key, flickr_api_secret, openai_api_key]):
     print("- OPENAI_API_KEY")
     exit(1)
 
-def perform_oauth_authentication():
+
+def flickr_authentication():
     try:
-        flickr = flickrapi.FlickrAPI(
+        flickr_api = flickrapi.FlickrAPI(
             flickr_api_key, flickr_api_secret, format="parsed-json"
         )
-        flickr.token_cache.forget()
+        flickr_api.token_cache.forget()
 
         print("Performing OAuth authentication...")
-        flickr.get_request_token(oauth_callback="oob")
-        authorize_url = flickr.auth_url(perms="write")
+        flickr_api.get_request_token(oauth_callback="oob")
+        authorize_url = flickr_api.auth_url(perms="write")
         print(f"Please visit this URL to authorize the application: {authorize_url}")
         verifier = input("Enter the verifier code: ")
-        flickr.get_access_token(verifier)
-        return flickr
-    except FlickrError as e:
+        flickr_api.get_access_token(verifier)
+        return flickr_api
+    except flickrapi.FlickrError as e:
         print("Unauthorized error occurred. Retrying authentication...")
-        flickr.token_cache.forget()
-        perform_oauth_authentication(flickr)
+        flickr_api.token_cache.forget()
+        return flickr_authentication()
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         raise  # Re-raise the non-FlickrError exception
-
-# Perform OAuth authentication and get the Flickr API instance
-flickr = perform_oauth_authentication()
-
-# Create OpenAI API client
-openai = OpenAI(
-    api_key=os.environ["OPENAI_API_KEY"],  # this is also the default, it can be omitted
-)
 
 
 def get_all_photosets():
@@ -100,6 +90,7 @@ def has_flickr_description(photo):
         "IMG_",
         "Photo ",
         "Picture ",
+        "DCIM",
     ]
     return (
         not any(
@@ -230,6 +221,14 @@ def update_flickr_metadata(photo_id, analysis):
     flickr.photos.setMeta(photo_id=photo_id, title=title, description=description)
 
 
+# Perform OAuth authentication and get the Flickr API instance
+flickr = flickr_authentication()
+
+# Create OpenAI API client
+openai = OpenAI(
+    api_key=os.environ["OPENAI_API_KEY"],  # this is also the default, it can be omitted
+)
+
 if photoset_id:
     # Process a specific photoset
     photosets = [flickr.photosets.getInfo(photoset_id=photoset_id)["photoset"]]
@@ -264,11 +263,6 @@ for photoset in photosets:
     for photo in photos["photoset"]["photo"]:
         photo_id = photo["id"]
         image_url = photo["url_m"]
-
-        # # Check if the photo is public
-        # if not is_public_photo(photo_id):
-        #     print(f"Skipping non-public photo {photo_id}.")
-        #     continue
 
         # Check if the photo already has a description
         if has_flickr_description(photo):
