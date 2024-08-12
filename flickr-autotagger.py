@@ -17,13 +17,13 @@ def load_env_variables():
 
 
 # OpenAI Model and costings
-OPENAI_MODEL = "gpt-4o-mini"
-OPENAI_COST_PER_1K_PROMPT_TOKEN = 0.000150
-OPENAI_COST_PER_1K_COMPLETION_TOKEN = 0.000600
-OPENAI_VISION_COST_PER_IMAGE = 0.000425
+OPENAI_MODEL = "gpt-4o-2024-08-06"
+OPENAI_COST_PER_1K_PROMPT_TOKEN = 0.00250
+OPENAI_COST_PER_1K_COMPLETION_TOKEN = 0.01000
+OPENAI_VISION_COST_PER_IMAGE = 0.000213
 
 # Script configuration
-FLICKR_PRIVACY_FILTER = 4  # 1. public, 2. friends, 3. family, 4. friends & family, 5. private
+FLICKR_PRIVACY_FILTER = 0  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
 DESCRIPTIONS_TO_ANALYZE = [
     "OLYMPUS DIGITAL CAMERA",
     "Untitled",
