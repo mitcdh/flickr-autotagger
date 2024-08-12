@@ -1,0 +1,3 @@
+flickrapi
+openai
+python-dotenv
