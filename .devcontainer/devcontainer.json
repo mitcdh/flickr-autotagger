@@ -1,9 +1,5 @@
 {
   "name": "Flickr Autotagger Dev Container",
   "image": "mcr.microsoft.com/vscode/devcontainers/python:3.9",
-  "postCreateCommand": "pip install -r requirements.txt",
-  "runArgs": [
-    "--userns=keep-id:uid=1000,gid=1000"
-  ],
-  "containerUser": "vscode"
+  "postCreateCommand": "pip install -r requirements.txt"
 }
