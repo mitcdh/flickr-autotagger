@@ -23,7 +23,7 @@ OPENAI_COST_PER_1K_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1K_C
 OPENAI_VISION_COST_PER_IMAGE = float(os.environ.get("OPENAI_VISION_COST_PER_IMAGE", "0.000213"))
 
 # Script configuration
-FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "1"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
+FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "0"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
 FLICKR_TOKEN_FILE = os.environ.get("FLICKR_TOKEN_FILE", "flickr_token.json")
 DESCRIPTIONS_TO_ANALYZE = os.environ.get("DESCRIPTIONS_TO_ANALYZE", '["OLYMPUS DIGITAL CAMERA", "Untitled", "DSC_", "IMG_", "DCIM"]')
 DESCRIPTIONS_TO_ANALYZE = eval(DESCRIPTIONS_TO_ANALYZE)

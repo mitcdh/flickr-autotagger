@@ -43,12 +43,18 @@ The script will:
 
 ## Configuration
 
+The following optional environment variables can be set to configure how the script works, defaults have been set so an execution should be successful without configuring any of the below:
+
 - `OPENAI_MODEL`: Specifies the OpenAI model to use (default: "gpt-4o-2024-08-06")
 - `OPENAI_COST_PER_PROMPT_TOKEN`: Cost per prompt token (default: 0.00250)
 - `OPENAI_COST_PER_COMPLETION_TOKEN`: Cost per completion token (default: 0.01000)
 - `OPENAI_VISION_COST_PER_IMAGE`: Fixed cost per image analysis (default: 0.000213)
 - `FLICKR_PRIVACY_FILTER`: Tells the Flickr API to return only images with a specific privacy level (0. none/default, 1. public, 2. friends, 3. family, 4. friends & family, 5. private)
 - `MAX_KEYWORDS`: Sets the maximum number of keywords to request GPT to generate (default: 10)
+- `FLICKR_TOKEN_FILE`: Specifies the file name to store the Flickr OAuth token (default: "flickr_token.json")
+- `DESCRIPTIONS_TO_ANALYZE`: A list of strings that, if found at the start of an existing Flickr description, will cause the script to analyze and update the image metadata (default: '["OLYMPUS DIGITAL CAMERA", "Untitled", "DSC_", "IMG_", "DCIM"]')
+- `SKIP_PREFIX`: A list of characters that, if found at the start of a photoset name, will cause the script to skip processing that photoset (default: '["#", "@"]')
+- `UPDATED_METADATA_FILE`: Specifies the file name to store the updated metadata for all processed images (default: "updated_metadata.json")
 
 As of 2024-08-16, the script is configured to use gpt-4o, however, if you'd like to use the more economical gpt-4o-mini, the following could be used:
 
