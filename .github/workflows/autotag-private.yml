@@ -1,4 +1,4 @@
-name: Autotag Private
+name: Autotag Private Photos
 
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
       image: mcr.microsoft.com/vscode/devcontainers/python:3.12
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
@@ -42,6 +42,7 @@ jobs:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         FLICKR_API_KEY: ${{ secrets.FLICKR_API_KEY }}
         FLICKR_API_SECRET: ${{ secrets.FLICKR_API_SECRET }}
+        FLICKR_OAUTH_TOKEN: ${{ secrets.FLICKR_OAUTH_TOKEN }}
         OPENAI_MODEL: ${{ github.event.inputs.openai_model }}
         OPENAI_COST_PER_1K_PROMPT_TOKEN: ${{ github.event.inputs.openai_prompt_cost }}
         OPENAI_COST_PER_1K_COMPLETION_TOKEN: ${{ github.event.inputs.openai_completion_cost }}

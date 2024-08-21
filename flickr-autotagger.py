@@ -23,7 +23,8 @@ OPENAI_COST_PER_1K_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1K_C
 OPENAI_VISION_COST_PER_IMAGE = float(os.environ.get("OPENAI_VISION_COST_PER_IMAGE", "0.000213"))
 
 # Script configuration
-FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "0"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
+FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "1"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
+FLICKR_TOKEN_FILE = os.environ.get("FLICKR_TOKEN_FILE", "flickr_token.json")
 DESCRIPTIONS_TO_ANALYZE = os.environ.get("DESCRIPTIONS_TO_ANALYZE", '["OLYMPUS DIGITAL CAMERA", "Untitled", "DSC_", "IMG_", "DCIM"]')
 DESCRIPTIONS_TO_ANALYZE = eval(DESCRIPTIONS_TO_ANALYZE)
 SKIP_PREFIX = os.environ.get("SKIP_PREFIX", '["#", "@"]')
@@ -50,17 +51,69 @@ if not all([flickr_api_key, flickr_api_secret, openai_api_key]):
 
 def flickr_authentication():
     try:
+        # Check if the token file exists
+        if os.path.exists("flickr_token.json"):
+            # Load the token from the file
+            with open("flickr_token.json", "r") as f:
+                try:
+                    token_dict = json.load(f)
+                    token = flickrapi.auth.FlickrAccessToken(
+                        token_dict["oauth_token"],
+                        token_dict["oauth_token_secret"],
+                        token_dict["access_level"],
+                        token_dict["fullname"],
+                        token_dict["username"],
+                        token_dict["user_nsid"],
+                    )
+                    flickr_api = flickrapi.FlickrAPI(
+                        flickr_api_key, flickr_api_secret, token=token, format="parsed-json"
+                    )
+                    return flickr_api
+                except json.JSONDecodeError:
+                    print("Invalid JSON format in the token file. Performing OAuth authentication...")
+        
+        # Check if the token is available in the environment variable
+        elif os.environ.get("FLICKR_OAUTH_TOKEN"):
+            token_dict = json.loads(os.environ["FLICKR_OAUTH_TOKEN"])
+            token = flickrapi.auth.FlickrAccessToken(
+                token_dict["oauth_token"],
+                token_dict["oauth_token_secret"],
+                token_dict["access_level"],
+                token_dict["fullname"],
+                token_dict["username"],
+                token_dict["user_nsid"],
+            )
+            flickr_api = flickrapi.FlickrAPI(
+                flickr_api_key, flickr_api_secret, token=token, format="parsed-json"
+            )
+            return flickr_api
+
+        # If the token file doesn't exist and the environment variable is not set, perform the OAuth flow
         flickr_api = flickrapi.FlickrAPI(
             flickr_api_key, flickr_api_secret, format="parsed-json"
         )
         flickr_api.token_cache.forget()
-
         print("Performing OAuth authentication...")
         flickr_api.get_request_token(oauth_callback="oob")
         authorize_url = flickr_api.auth_url(perms="write")
         print(f"Please visit this URL to authorize the application: {authorize_url}")
         verifier = input("Enter the verifier code: ")
         flickr_api.get_access_token(verifier)
+
+        # Save the full token object as a dictionary
+        token_dict = {
+            "oauth_token": flickr_api.token_cache.token.token,
+            "oauth_token_secret": flickr_api.token_cache.token.token_secret,
+            "access_level": flickr_api.token_cache.token.access_level,
+            "fullname": flickr_api.token_cache.token.fullname,
+            "username": flickr_api.token_cache.token.username,
+            "user_nsid": flickr_api.token_cache.token.user_nsid,
+        }
+
+        # Save the token dictionary to the file for future use
+        with open("flickr_token.json", "w") as f:
+            json.dump(token_dict, f)
+
         return flickr_api
     except flickrapi.FlickrError as e:
         print("Unauthorized error occurred. Retrying authentication...")
