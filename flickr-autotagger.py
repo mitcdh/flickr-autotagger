@@ -283,7 +283,60 @@ def process_photoset(flickr, openai, photoset):
     skipped_photos = 0
     updated_metadata = []
     for photo in photos["photoset"]["photo"]:
-        # ... process each photo ...
+        # Process each image in the photoset
+        photoset_cost = 0
+        skipped_photos = 0
+        for photo in photos["photoset"]["photo"]:
+            photo_id = photo["id"]
+            image_url = photo["url_m"]
+        
+            # Check if the photo already has a description
+            if has_flickr_description(photo):
+                skipped_photos += 1
+                continue
+        
+            # Get the location information for the photo
+            latitude = photo.get("latitude")
+            longitude = photo.get("longitude")
+            location = (
+                {"latitude": latitude, "longitude": longitude}
+                if latitude and longitude
+                else None
+            )
+        
+            retry_count = 0
+            while retry_count < 2:
+                try:
+                    # Get image analysis from ChatGPT
+                    analysis = get_image_analysis(
+                        image_url, photoset_title, photoset_description, location
+                    )
+                    break
+                except BadRequestError as e:
+                    retry_count += 1
+                    if retry_count == 2:
+                        print(
+                            f"Skipping photo {photo_id} due to repeated BadRequestError: {str(e)}"
+                        )
+                        continue
+        
+            if retry_count == 2:
+                continue
+        
+            # Include photoset_id and photo_id in the analysis JSON
+            analysis["photoset_id"] = photoset_id
+            analysis["photo_id"] = photo_id
+        
+            # Calculate the cost for this request if usage information is available
+            if "usage" in analysis:
+                if "cost" in analysis["usage"]:
+                    photoset_cost += analysis["usage"]["cost"]
+        
+            # Update Flickr image metadata
+            update_flickr_metadata(photo_id, analysis)
+        
+            # Append the analysis result to the updated metadata list
+            updated_metadata.append(analysis)
 
     print(f"Finished processing photoset: {photoset_title}")
     print(f"Skipped {skipped_photos} photos due to existing descriptions")
