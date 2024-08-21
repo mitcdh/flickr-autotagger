@@ -17,22 +17,18 @@ def load_env_variables():
 
 
 # OpenAI Model and costings
-OPENAI_MODEL = "gpt-4o-2024-08-06"
-OPENAI_COST_PER_1K_PROMPT_TOKEN = 0.00250
-OPENAI_COST_PER_1K_COMPLETION_TOKEN = 0.01000
-OPENAI_VISION_COST_PER_IMAGE = 0.000213
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-2024-08-06")
+OPENAI_COST_PER_1K_PROMPT_TOKEN = float(os.environ.get("OPENAI_COST_PER_1K_PROMPT_TOKEN", "0.00250"))
+OPENAI_COST_PER_1K_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1K_COMPLETION_TOKEN", "0.01000"))
+OPENAI_VISION_COST_PER_IMAGE = float(os.environ.get("OPENAI_VISION_COST_PER_IMAGE", "0.000213"))
 
 # Script configuration
-FLICKR_PRIVACY_FILTER = 0  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
-DESCRIPTIONS_TO_ANALYZE = [
-    "OLYMPUS DIGITAL CAMERA",
-    "Untitled",
-    "DSC_",
-    "IMG_",
-    "DCIM",
-]
-SKIP_PREFIX = ["#", "@"]
-MAX_KEYWORDS = 10
+FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "0"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
+DESCRIPTIONS_TO_ANALYZE = os.environ.get("DESCRIPTIONS_TO_ANALYZE", '["OLYMPUS DIGITAL CAMERA", "Untitled", "DSC_", "IMG_", "DCIM"]')
+DESCRIPTIONS_TO_ANALYZE = eval(DESCRIPTIONS_TO_ANALYZE)
+SKIP_PREFIX = os.environ.get("SKIP_PREFIX", '["#", "@"]')
+SKIP_PREFIX = eval(SKIP_PREFIX)
+MAX_KEYWORDS = int(os.environ.get("MAX_KEYWORDS", "10"))
 
 # Load environment variables from .env file if they are not already set
 load_env_variables()
