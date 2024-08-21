@@ -1,4 +1,4 @@
-name: Autotag Photos with GPT-4o
+name: Autotag Photos (GPT-4o)
 
 on:
   workflow_dispatch:
