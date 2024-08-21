@@ -293,19 +293,23 @@ with open(UPDATED_METADATA_FILE, "w") as f:
             continue
 
         # Get photos from the current photoset
-        photos = flickr.photosets.getPhotos(
-            photoset_id=photoset_id,
-            extras="url_m,description,geo",
-            media="photos",
-            privacy_filter=FLICKR_PRIVACY_FILTER,
-        )
-
-        # Check if the photoset has any images
-        if len(photos["photo"]) == 0:
-            # print(f"Skipping photoset: {photoset_title} (ID: {photoset_id}) - No images returned matching privacy filter")
+        try:
+            photos = flickr.photosets.getPhotos(
+                photoset_id=photoset_id,
+                extras="url_m,description,geo",
+                media="photos",
+                privacy_filter=FLICKR_PRIVACY_FILTER,
+            )
+        except flickrapi.exceptions.FlickrError as e:
+            print(f"Error retrieving photos for photoset: {photoset_title} (ID: {photoset_id}) - {str(e)}")
             continue
 
-        print(f"Processing photoset: {photoset_title} (ID: {photoset_id})")
+        # Check if the photoset has any matching photos, if skipped here check privacy filter
+        if photos["photoset"]["total"] == 0:
+            # print(f"Skipping photoset: {photoset_title} (ID: {photoset_id}) - No images returned")
+            continue
+
+        print(f"Processing photoset: {photoset_title} (ID: {photoset_id}) - {photos["photoset"]["total"]} images")
 
         # Process each image in the photoset
         photoset_cost = 0
