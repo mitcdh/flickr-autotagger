@@ -1,0 +1,61 @@
+name: Autotag Photos with GPT-4o-mini
+
+on:
+  workflow_dispatch:
+    inputs:
+      openai_model:
+        description: 'OpenAI Model'
+        required: true
+        default: 'gpt-4o-mini'
+      openai_prompt_cost:
+        description: 'OpenAI Cost per 1K Prompt Tokens'
+        required: true
+        default: '0.000150'
+      openai_completion_cost:
+        description: 'OpenAI Cost per 1K Completion Tokens'
+        required: true
+        default: '0.000600'
+      openai_vision_cost:
+        description: 'OpenAI Vision Cost per Image'
+        required: true
+        default: '0.001275'
+      flickr_privacy_filter:
+        description: 'Flickr Privacy Filter (default: public)'
+        required: true
+        default: '1'
+
+jobs:
+  flickr-autotagger:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/vscode/devcontainers/python:3.12
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Flickr Autotagger
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        FLICKR_API_KEY: ${{ secrets.FLICKR_API_KEY }}
+        FLICKR_API_SECRET: ${{ secrets.FLICKR_API_SECRET }}
+        FLICKR_OAUTH_TOKEN: ${{ secrets.FLICKR_OAUTH_TOKEN }}
+        OPENAI_MODEL: ${{ github.event.inputs.openai_model }}
+        OPENAI_COST_PER_1K_PROMPT_TOKEN: ${{ github.event.inputs.openai_prompt_cost }}
+        OPENAI_COST_PER_1K_COMPLETION_TOKEN: ${{ github.event.inputs.openai_completion_cost }}
+        OPENAI_VISION_COST_PER_IMAGE: ${{ github.event.inputs.openai_vision_cost }}
+        FLICKR_PRIVACY_FILTER: ${{ github.event.inputs.flickr_privacy_filter }}
+      run: |
+        python flickr-autotagger.py
+
+    - name: Upload Metadata File
+      if: success()
+      continue-on-error: true
+      uses: actions/upload-artifact@v4
+      with:
+        name: updated-metadata
+        path: updated_metadata.json
+        if-no-files-found: ignore

@@ -1,4 +1,4 @@
-name: Autotag Public Photos
+name: Autotag Photos with GPT-4o
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ on:
         required: true
         default: '0.000213'
       flickr_privacy_filter:
-        description: 'Flickr Privacy Filter'
+        description: 'Flickr Privacy Filter (default: public)'
         required: true
         default: '1'
 
