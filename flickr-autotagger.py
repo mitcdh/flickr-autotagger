@@ -372,11 +372,14 @@ def main():
 
     all_updated_metadata, total_cost = process_all_photosets(flickr, openai)
 
-    # Write the updated metadata JSON to the file
-    with open(UPDATED_METADATA_FILE, "w") as f:
-        json.dump(all_updated_metadata, f, indent=2)
+    # Write the updated metadata JSON to the file only if there are entries
+    if all_updated_metadata:
+        with open(UPDATED_METADATA_FILE, "w") as f:
+            json.dump(all_updated_metadata, f, indent=2)
+        print(f"Updated metadata JSON saved to: {UPDATED_METADATA_FILE}")
+    else:
+        print("No updated metadata to write.")
 
-    print(f"Updated metadata JSON saved to: {UPDATED_METADATA_FILE}")
     print(f"Total cost of OpenAI API usage: ${total_cost:.4f}")
 
 if __name__ == "__main__":
