@@ -289,10 +289,8 @@ with open(UPDATED_METADATA_FILE, "w") as f:
 
         # Skip photosets with names starting with any character in skip_characters
         if any(photoset_title.startswith(char) for char in SKIP_PREFIX):
-            print(f"Skipping photoset: {photoset_title} (ID: {photoset_id})")
+            # print(f"Skipping photoset: {photoset_title} (ID: {photoset_id})")
             continue
-
-        print(f"Processing photoset: {photoset_title} (ID: {photoset_id})")
 
         # Get photos from the current photoset
         photos = flickr.photosets.getPhotos(
@@ -301,6 +299,13 @@ with open(UPDATED_METADATA_FILE, "w") as f:
             media="photos",
             privacy_filter=FLICKR_PRIVACY_FILTER,
         )
+
+        # Check if the photoset has any images
+        if len(photos["photo"]) == 0:
+            # print(f"Skipping photoset: {photoset_title} (ID: {photoset_id}) - No images returned matching privacy filter")
+            continue
+
+        print(f"Processing photoset: {photoset_title} (ID: {photoset_id})")
 
         # Process each image in the photoset
         photoset_cost = 0
