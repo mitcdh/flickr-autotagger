@@ -50,3 +50,12 @@ jobs:
         FLICKR_PRIVACY_FILTER: ${{ github.event.inputs.flickr_privacy_filter }}
       run: |
         python flickr-autotagger.py
+
+    - name: Upload Metadata File
+      if: success()
+      continue-on-error: true
+      uses: actions/upload-artifact@v4
+      with:
+        name: updated-metadata
+        path: updated_metadata.json
+        if-no-files-found: ignore
