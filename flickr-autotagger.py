@@ -116,7 +116,7 @@ def flickr_authentication():
             json.dump(token_dict, f)
 
         return flickr_api
-    except flickrapi.FlickrError as e:
+    except flickrapi.FlickrError:
         print("Unauthorized error occurred. Retrying authentication...")
         flickr_api.token_cache.forget()
         return flickr_authentication()
