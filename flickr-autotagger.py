@@ -116,7 +116,7 @@ def flickr_authentication():
         raise  # Re-raise the non-FlickrError exception
 
 
-def get_all_photosets():
+def get_all_photosets(flickr):
     photosets = []
     page = 1
     per_page = 500
@@ -289,12 +289,12 @@ def process_photoset(flickr, openai, photoset):
         for photo in photos["photoset"]["photo"]:
             photo_id = photo["id"]
             image_url = photo["url_m"]
-        
+
             # Check if the photo already has a description
             if has_flickr_description(photo):
                 skipped_photos += 1
                 continue
-        
+
             # Get the location information for the photo
             latitude = photo.get("latitude")
             longitude = photo.get("longitude")
@@ -303,7 +303,7 @@ def process_photoset(flickr, openai, photoset):
                 if latitude and longitude
                 else None
             )
-        
+
             retry_count = 0
             while retry_count < 2:
                 try:
@@ -319,22 +319,22 @@ def process_photoset(flickr, openai, photoset):
                             f"Skipping photo {photo_id} due to repeated BadRequestError: {str(e)}"
                         )
                         continue
-        
+
             if retry_count == 2:
                 continue
-        
+
             # Include photoset_id and photo_id in the analysis JSON
             analysis["photoset_id"] = photoset_id
             analysis["photo_id"] = photo_id
-        
+
             # Calculate the cost for this request if usage information is available
             if "usage" in analysis:
                 if "cost" in analysis["usage"]:
                     photoset_cost += analysis["usage"]["cost"]
-        
+
             # Update Flickr image metadata
             update_flickr_metadata(photo_id, analysis)
-        
+
             # Append the analysis result to the updated metadata list
             updated_metadata.append(analysis)
 
@@ -350,7 +350,7 @@ def process_all_photosets(flickr, openai):
         photosets = [flickr.photosets.getInfo(photoset_id=SINGLE_PHOTOSET_ID)["photoset"]]
     else:
         # Get all photosets
-        photosets = get_all_photosets()
+        photosets = get_all_photosets(flickr)
 
     total_cost = 0
     all_updated_metadata = []
