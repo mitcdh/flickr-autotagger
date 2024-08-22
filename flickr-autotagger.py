@@ -156,7 +156,7 @@ def strip_markdown_response(response):
 
 # Function to get image analysis from ChatGPT
 def get_image_analysis(
-    image_url, photoset_title=None, photoset_description=None, location=None
+    openai, image_url, photoset_title=None, photoset_description=None, location=None
 ):
     system_message = (
         "Summarize images and generate metadata as valid JSON. Create JSON with:\n"
@@ -234,7 +234,7 @@ def get_image_analysis(
 
 
 # Function to update Flickr image tags and description
-def update_flickr_metadata(photo_id, analysis):
+def update_flickr_metadata(flickr, photo_id, analysis):
     if "error" in analysis:
         print(f"Error: {analysis['error']}")
         return
@@ -309,7 +309,7 @@ def process_photoset(flickr, openai, photoset):
                 try:
                     # Get image analysis from ChatGPT
                     analysis = get_image_analysis(
-                        image_url, photoset_title, photoset_description, location
+                        openai, image_url, photoset_title, photoset_description, location
                     )
                     break
                 except BadRequestError as e:
@@ -333,7 +333,7 @@ def process_photoset(flickr, openai, photoset):
                     photoset_cost += analysis["usage"]["cost"]
 
             # Update Flickr image metadata
-            update_flickr_metadata(photo_id, analysis)
+            update_flickr_metadata(flickr, photo_id, analysis)
 
             # Append the analysis result to the updated metadata list
             updated_metadata.append(analysis)
