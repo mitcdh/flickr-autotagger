@@ -49,7 +49,7 @@ The following optional environment variables can be set to configure how the scr
 - `OPENAI_COST_PER_PROMPT_TOKEN`: Cost per prompt token (default: 0.00250)
 - `OPENAI_COST_PER_COMPLETION_TOKEN`: Cost per completion token (default: 0.01000)
 - `OPENAI_VISION_COST_PER_IMAGE`: Fixed cost per image analysis (default: 0.000213)
-- `FLICKR_PRIVACY_FILTER`: Tells the Flickr API to return only images with a specific privacy level (0. none/default, 1. public, 2. friends, 3. family, 4. friends & family, 5. private)
+- `FLICKR_PRIVACY_FILTER`: Tells the Flickr API to return only images with a specific privacy level (0. none, 1. public/default, 2. friends, 3. family, 4. friends & family, 5. private)
 - `MAX_KEYWORDS`: Sets the maximum number of keywords to request GPT to generate (default: 10)
 - `FLICKR_TOKEN_FILE`: Specifies the file name to store the Flickr OAuth token (default: "flickr_token.json")
 - `DESCRIPTIONS_TO_ANALYZE`: A list of strings that, if found at the start of an existing Flickr description, will cause the script to analyze and update the image metadata (default: '["OLYMPUS DIGITAL CAMERA", "Untitled", "DSC_", "IMG_", "DCIM"]')
