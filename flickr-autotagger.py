@@ -255,34 +255,49 @@ def process_photoset(flickr, openai, photoset):
     photoset_id = photoset["id"]
     photoset_title = photoset["title"]["_content"]
     photoset_description = photoset["description"]["_content"]
-
+    
     # Skip photosets with names starting with any character in skip_characters
     if any(photoset_title.startswith(char) for char in SKIP_PREFIX):
         return None
-
-    # Get photos from the current photoset
-    try:
-        photos = flickr.photosets.getPhotos(
-            photoset_id=photoset_id,
-            extras="url_m,description,geo",
-            media="photos",
-            privacy_filter=FLICKR_PRIVACY_FILTER,
-        )
-    except flickrapi.exceptions.FlickrError as e:
-        print(f"Error retrieving photos for photoset: {photoset_title} (ID: {photoset_id}) - {str(e)}")
-        return None
-
-    # Check if the photoset has any matching photos, if skipped here check privacy filter
-    if photos["photoset"]["total"] == 0:
-        return None
-
-    print(f"Processing photoset: {photoset_title} (ID: {photoset_id}) - {photos["photoset"]["total"]} images")
+        
+    # Get photos from the current photoset with pagination
+    all_photos = []
+    page = 1
+    per_page = 500  # Maximum allowed by Flickr API
+    
+    while True:
+        try:
+            photos_response = flickr.photosets.getPhotos(
+                photoset_id=photoset_id,
+                extras="url_m,description,geo",
+                media="photos",
+                privacy_filter=FLICKR_PRIVACY_FILTER,
+                page=page,
+                per_page=per_page
+            )
+            
+            # Add photos from this page to our collection
+            all_photos.extend(photos_response["photoset"]["photo"])
+            
+            # Check if we've processed all pages
+            total_photos = int(photos_response["photoset"]["total"])
+            if page * per_page >= total_photos:
+                break
+                
+            # Move to next page
+            page += 1
+            
+        except flickrapi.exceptions.FlickrError as e:
+            print(f"Error retrieving photos for photoset: {photoset_title} (ID: {photoset_id}) - {str(e)}")
+            return None
+    
+    print(f"Processing photoset: {photoset_title} (ID: {photoset_id}) - {len(all_photos)} images")
     
     # Process each image in the photoset
     updated_metadata = []
     photoset_cost = 0
     skipped_photos = 0
-    for photo in photos["photoset"]["photo"]:
+    for photo in all_photos:
         photo_id = photo["id"]
         image_url = photo["url_m"]
 
