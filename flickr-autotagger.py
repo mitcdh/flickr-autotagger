@@ -13,13 +13,14 @@ except Exception as e:
 
 # OpenAI Model and costings
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-2024-08-06")
-OPENAI_COST_PER_1K_PROMPT_TOKEN = float(os.environ.get("OPENAI_COST_PER_1K_PROMPT_TOKEN", "0.00250"))
-OPENAI_COST_PER_1K_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1K_COMPLETION_TOKEN", "0.01000"))
+OPENAI_COST_PER_1M_PROMPT_TOKEN = float(os.environ.get("OPENAI_COST_PER_1M_PROMPT_TOKEN", "2.5"))
+OPENAI_COST_PER_1M_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1M_COMPLETION_TOKEN", "10"))
 OPENAI_VISION_COST_PER_IMAGE = float(os.environ.get("OPENAI_VISION_COST_PER_IMAGE", "0.000213"))
 
 # Script configuration
 FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "1"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
 FLICKR_TOKEN_FILE = os.environ.get("FLICKR_TOKEN_FILE", "flickr_token.json")
+FLICKR_IMAGE_URL = os.environ.get("FLICKR_IMAGE_URL", "url_m")
 DESCRIPTIONS_TO_ANALYZE = os.environ.get("DESCRIPTIONS_TO_ANALYZE", '["OLYMPUS DIGITAL CAMERA", "Untitled", "DSC_", "IMG_", "DCIM"]')
 DESCRIPTIONS_TO_ANALYZE = eval(DESCRIPTIONS_TO_ANALYZE)
 SKIP_PREFIX = os.environ.get("SKIP_PREFIX", '["#", "@"]')
@@ -218,8 +219,8 @@ def get_image_analysis(
             prompt_tokens = response.usage.prompt_tokens
             completion_tokens = response.usage.completion_tokens
             cost = (
-                (prompt_tokens * OPENAI_COST_PER_1K_PROMPT_TOKEN / 1000)
-                + (completion_tokens * OPENAI_COST_PER_1K_COMPLETION_TOKEN / 1000)
+                (prompt_tokens * OPENAI_COST_PER_1M_PROMPT_TOKEN / 1000000)
+                + (completion_tokens * OPENAI_COST_PER_1M_COMPLETION_TOKEN / 1000000)
                 + OPENAI_VISION_COST_PER_IMAGE
             )
             analysis["usage"] = {
@@ -269,7 +270,7 @@ def process_photoset(flickr, openai, photoset):
         try:
             photos_response = flickr.photosets.getPhotos(
                 photoset_id=photoset_id,
-                extras="url_m,description,geo",
+                extras=f"{FLICKR_IMAGE_URL},description,geo",
                 media="photos",
                 privacy_filter=FLICKR_PRIVACY_FILTER,
                 page=page,
@@ -299,7 +300,7 @@ def process_photoset(flickr, openai, photoset):
     skipped_photos = 0
     for photo in all_photos:
         photo_id = photo["id"]
-        image_url = photo["url_m"]
+        image_url = photo[FLICKR_IMAGE_URL]
 
         # Check if the photo already has a description
         if has_flickr_description(photo):

@@ -1,4 +1,4 @@
-name: Autotag Photos (GPT-4o)
+name: Autotag Photos (GPT-4.1-Mini)
 
 on:
   workflow_dispatch:
@@ -6,19 +6,23 @@ on:
       openai_model:
         description: 'OpenAI Model'
         required: true
-        default: 'gpt-4o-2024-08-06'
+        default: 'gpt-4.1-mini-2025-04-14'
       openai_prompt_cost:
         description: 'OpenAI Cost per 1M Prompt Tokens'
         required: true
-        default: '2.5'
+        default: '0.4'
       openai_completion_cost:
         description: 'OpenAI Cost per 1M Completion Tokens'
         required: true
-        default: '10'
+        default: '1.6'
       openai_vision_cost:
         description: 'OpenAI Vision Cost per Image'
         required: true
-        default: '0.000213'
+        default: '0.0'
+      flickr_image_url:
+          description: 'Flickr Image URL (default: url_m)'
+          required: true
+          default: 'url_m'
       flickr_privacy_filter:
         description: 'Flickr Privacy Filter (default: public)'
         required: true
@@ -47,6 +51,7 @@ jobs:
         OPENAI_COST_PER_1M_PROMPT_TOKEN: ${{ github.event.inputs.openai_prompt_cost }}
         OPENAI_COST_PER_1M_COMPLETION_TOKEN: ${{ github.event.inputs.openai_completion_cost }}
         OPENAI_VISION_COST_PER_IMAGE: ${{ github.event.inputs.openai_vision_cost }}
+        FLICKR_IMAGE_URL: ${{ github.event.inputs.flickr_image_url }}
         FLICKR_PRIVACY_FILTER: ${{ github.event.inputs.flickr_privacy_filter }}
       run: |
         python flickr-autotagger.py

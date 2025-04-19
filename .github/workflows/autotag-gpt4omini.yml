@@ -8,13 +8,13 @@ on:
         required: true
         default: 'gpt-4o-mini'
       openai_prompt_cost:
-        description: 'OpenAI Cost per 1K Prompt Tokens'
+        description: 'OpenAI Cost per 1M Prompt Tokens'
         required: true
-        default: '0.000150'
+        default: '0.15'
       openai_completion_cost:
-        description: 'OpenAI Cost per 1K Completion Tokens'
+        description: 'OpenAI Cost per 1M Completion Tokens'
         required: true
-        default: '0.000600'
+        default: '0.6'
       openai_vision_cost:
         description: 'OpenAI Vision Cost per Image'
         required: true
@@ -44,8 +44,8 @@ jobs:
         FLICKR_API_SECRET: ${{ secrets.FLICKR_API_SECRET }}
         FLICKR_OAUTH_TOKEN: ${{ secrets.FLICKR_OAUTH_TOKEN }}
         OPENAI_MODEL: ${{ github.event.inputs.openai_model }}
-        OPENAI_COST_PER_1K_PROMPT_TOKEN: ${{ github.event.inputs.openai_prompt_cost }}
-        OPENAI_COST_PER_1K_COMPLETION_TOKEN: ${{ github.event.inputs.openai_completion_cost }}
+        OPENAI_COST_PER_1M_PROMPT_TOKEN: ${{ github.event.inputs.openai_prompt_cost }}
+        OPENAI_COST_PER_1M_COMPLETION_TOKEN: ${{ github.event.inputs.openai_completion_cost }}
         OPENAI_VISION_COST_PER_IMAGE: ${{ github.event.inputs.openai_vision_cost }}
         FLICKR_PRIVACY_FILTER: ${{ github.event.inputs.flickr_privacy_filter }}
       run: |
