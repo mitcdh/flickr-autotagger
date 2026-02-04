@@ -12,10 +12,10 @@ except Exception as e:
     print(f"Failed to load .env file: {e}")
 
 # OpenAI Model and costings
-OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-2024-08-06")
-OPENAI_COST_PER_1M_PROMPT_TOKEN = float(os.environ.get("OPENAI_COST_PER_1M_PROMPT_TOKEN", "2.5"))
-OPENAI_COST_PER_1M_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1M_COMPLETION_TOKEN", "10"))
-OPENAI_VISION_COST_PER_IMAGE = float(os.environ.get("OPENAI_VISION_COST_PER_IMAGE", "0.000213"))
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5-mini")
+OPENAI_COST_PER_1M_PROMPT_TOKEN = float(os.environ.get("OPENAI_COST_PER_1M_PROMPT_TOKEN", "0.25"))
+OPENAI_COST_PER_1M_COMPLETION_TOKEN = float(os.environ.get("OPENAI_COST_PER_1M_COMPLETION_TOKEN", "2.00"))
+OPENAI_VISION_COST_PER_IMAGE = float(os.environ.get("OPENAI_VISION_COST_PER_IMAGE", "0"))
 
 # Script configuration
 FLICKR_PRIVACY_FILTER = int(os.environ.get("FLICKR_PRIVACY_FILTER", "1"))  # 0. none, 1. public, 2. friends, 3. family, 4. friends & family, 5. private
@@ -185,7 +185,7 @@ def get_image_analysis(
             model=OPENAI_MODEL,
             messages=[
                 {
-                    "role": "system",
+                    "role": "developer",
                     "content": system_message,
                 },
                 {
@@ -202,7 +202,7 @@ def get_image_analysis(
                     ],
                 },
             ],
-            max_tokens=4000,
+            max_completion_tokens=4000,
         )
     except BadRequestError as e:
         raise e

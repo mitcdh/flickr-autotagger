@@ -6,15 +6,15 @@ on:
       openai_model:
         description: 'OpenAI Model'
         required: true
-        default: 'gpt-4.1-mini-2025-04-14'
+        default: 'gpt-5-mini'
       openai_prompt_cost:
         description: 'OpenAI Cost per 1M Prompt Tokens'
         required: true
-        default: '0.4'
+        default: '0.25'
       openai_completion_cost:
         description: 'OpenAI Cost per 1M Completion Tokens'
         required: true
-        default: '1.6'
+        default: '2.00'
       openai_vision_cost:
         description: 'OpenAI Vision Cost per Image'
         required: true
