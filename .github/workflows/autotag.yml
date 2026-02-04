@@ -1,4 +1,4 @@
-name: Autotag Photos (GPT-4.1-Mini)
+name: Autotag Photos
 
 on:
   workflow_dispatch:
@@ -63,4 +63,5 @@ jobs:
       with:
         name: updated-metadata
         path: updated_metadata.json
+
         if-no-files-found: ignore
