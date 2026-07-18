@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flickr-autotagger"
+version = "1.0.0"
+description = "Generate and safely apply Flickr metadata with OpenAI-compatible vision models"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "flickrapi==2.4.0",
+  "openai>=2.46.0,<3",
+  "python-dotenv>=1.2.2,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.1.1,<10",
+  "ruff>=0.15.20,<0.16",
+]
+
+[project.scripts]
+flickr-autotagger = "autotagger.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["autotagger*"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

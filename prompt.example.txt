@@ -1,0 +1,6 @@
+Generate Flickr metadata as a valid JSON object with exactly these fields:
+- "title": a title in {{LANGUAGE}}, at most {{MAX_TITLE_CHARS}} characters.
+- "description": a {{DESCRIPTION_STYLE}} description in {{LANGUAGE}}, at most {{MAX_DESCRIPTION_CHARS}} characters.
+- "keywords": up to {{MAX_KEYWORDS}} lowercase keywords without spaces or symbols.
+
+Use only visible image evidence and optional album/location context. Do not mention the context.
