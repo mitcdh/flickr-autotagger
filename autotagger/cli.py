@@ -81,6 +81,14 @@ def _report(summary: RunSummary, output_file: Path, *, dry_run: bool) -> None:
         f"skipped={summary.skipped}, failed={summary.failed}, "
         f"OpenAI cost=${summary.total_cost:.4f}"
     )
+    if summary.skip_reasons:
+        reasons = ", ".join(
+            f"{reason}={count}"
+            for reason, count in sorted(
+                summary.skip_reasons.items(), key=lambda item: (-item[1], item[0])
+            )
+        )
+        print(f"Skipped by reason: {reasons}")
     print(f"Run report saved to {output_file}")
 
 

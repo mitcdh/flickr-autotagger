@@ -33,9 +33,7 @@ class CheckpointStore:
                             f"Invalid JSON in {self.path} at line {line_number}"
                         ) from exc
                     photo_id = record.get("photo_id")
-                    if isinstance(photo_id, str) and (
-                        record.get("status") != "skipped" or photo_id not in latest
-                    ):
+                    if isinstance(photo_id, str) and record.get("status") != "skipped":
                         latest[photo_id] = record
         self._latest = latest
         return latest
@@ -51,10 +49,31 @@ class CheckpointStore:
             if self._latest is None:
                 self._latest = {}
             photo_id = record.get("photo_id")
-            if isinstance(photo_id, str) and (
-                record.get("status") != "skipped" or photo_id not in self._latest
-            ):
+            if isinstance(photo_id, str) and record.get("status") != "skipped":
                 self._latest[photo_id] = record
+
+    def compact(self) -> None:
+        """Rewrite the checkpoint with one durable non-skip state per photo."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            records = sorted(
+                self.load_latest().values(),
+                key=lambda record: str(record.get("photo_id", "")),
+            )
+            descriptor, temporary_name = tempfile.mkstemp(
+                prefix=f".{self.path.name}.", suffix=".tmp", dir=self.path.parent
+            )
+            temporary_path = Path(temporary_name)
+            try:
+                with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                    for record in records:
+                        handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary_path, self.path)
+            finally:
+                if temporary_path.exists():
+                    temporary_path.unlink()
 
 
 def write_summary(path: Path, records: Iterable[dict[str, Any]]) -> None:

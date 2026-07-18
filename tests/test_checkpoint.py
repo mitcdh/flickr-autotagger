@@ -13,6 +13,19 @@ def test_checkpoint_preserves_state_when_a_skip_event_follows(tmp_path):
     assert CheckpointStore(path).load_latest()["1"]["status"] == "analysed"
 
 
+def test_checkpoint_compaction_removes_skips_and_old_states(tmp_path):
+    path = tmp_path / "checkpoint.jsonl"
+    store = CheckpointStore(path)
+    store.append({"photo_id": "1", "status": "analysed", "analysis": {"title": "old"}})
+    store.append({"photo_id": "2", "status": "skipped", "reason": "existing description"})
+    store.append({"photo_id": "1", "status": "updated", "analysis": {"title": "new"}})
+
+    store.compact()
+
+    records = load_plan(path)
+    assert records == [{"analysis": {"title": "new"}, "photo_id": "1", "status": "updated"}]
+
+
 def test_summary_is_valid_json_and_plan_loader_supports_both_formats(tmp_path):
     records = [{"photo_id": "1", "status": "analysed"}]
     summary = tmp_path / "summary.json"

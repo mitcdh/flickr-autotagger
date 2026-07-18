@@ -6,6 +6,8 @@ Flickr GPT Autotagger generates titles, descriptions, and keywords for Flickr ph
 
 Running the command without `--apply` never changes Flickr. It writes a JSON run report and a durable JSON Lines checkpoint that can be reviewed or applied later.
 
+Run reports include aggregate skip counts by reason. Routine skips are not stored as individual checkpoint events; the checkpoint is compacted to one durable state per relevant photo after each successful run.
+
 ```bash
 # Analyse and create a plan only
 python flickr-autotagger.py
@@ -144,7 +146,7 @@ The **Autotag Photos** workflow remains manually dispatched and applies changes 
 - prevents overlapping autotag runs;
 - verifies lint and tests before accessing Flickr;
 - restores and saves the latest checkpoint;
-- uploads the run report and checkpoint even after partial failure;
+- uploads the run report and hidden checkpoint file even after partial failure;
 - installs the exact versions in `requirements.lock`.
 
 Configure these GitHub secrets:

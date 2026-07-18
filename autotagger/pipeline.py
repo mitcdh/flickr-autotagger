@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,6 +26,7 @@ class RunSummary:
     updated: int
     failed: int
     skipped: int
+    skip_reasons: dict[str, int]
     total_cost: float
 
 
@@ -78,6 +80,7 @@ class AutotaggerPipeline:
         self.updated_count = 0
         self.failed_count = 0
         self.skipped_count = 0
+        self.skip_reasons: Counter[str] = Counter()
 
     def _record(
         self,
@@ -98,9 +101,11 @@ class AutotaggerPipeline:
             self.updated_count += 1
         elif status in {"failed", "partially_updated"}:
             self.failed_count += 1
-        elif status == "skipped":
-            self.skipped_count += 1
         return record
+
+    def _skip(self, reason: str) -> None:
+        self.skipped_count += 1
+        self.skip_reasons[reason] += 1
 
     def _photoset_selected(self, photoset_id: str, title: str) -> bool:
         if any(title.startswith(prefix) for prefix in self.settings.skip_prefixes):
@@ -149,17 +154,17 @@ class AutotaggerPipeline:
                 cached: list[tuple[PhotoCandidate, dict[str, Any]]] = []
                 for photo in page:
                     if photo.id in processed:
-                        self._record("skipped", photo, reason="duplicate photo in this run")
+                        self._skip("duplicate photo in this run")
                         continue
                     processed.add(photo.id)
                     selected, reason = self._photo_selected(photo)
                     if not selected:
-                        self._record("skipped", photo, reason=reason)
+                        self._skip(reason)
                         continue
 
                     prior = latest.get(photo.id)
                     if prior and prior.get("status") == "updated":
-                        self._record("skipped", photo, reason="already updated in checkpoint")
+                        self._skip("already updated in checkpoint")
                         continue
                     if (
                         prior
@@ -227,8 +232,7 @@ class AutotaggerPipeline:
             if stop:
                 break
 
-        write_summary(self.settings.updated_metadata_file, self.records)
-        return self._summary()
+        return self._finish()
 
     def _apply(self, photo: PhotoCandidate, analysis: Analysis, *, cached: bool = False) -> None:
         try:
@@ -294,8 +298,24 @@ class AutotaggerPipeline:
                     stage="plan_validation",
                     error=f"{type(exc).__name__}: {exc}",
                 )
-        write_summary(self.settings.updated_metadata_file, self.records)
-        return self._summary()
+        return self._finish()
+
+    def _finish(self) -> RunSummary:
+        summary = self._summary()
+        run_summary = {
+            "timestamp": _timestamp(),
+            "run_id": self.run_id,
+            "status": "run_summary",
+            "analyzed": summary.analyzed,
+            "updated": summary.updated,
+            "failed": summary.failed,
+            "skipped": summary.skipped,
+            "skip_reasons": summary.skip_reasons,
+            "total_cost": summary.total_cost,
+        }
+        write_summary(self.settings.updated_metadata_file, (*self.records, run_summary))
+        self.checkpoint.compact()
+        return summary
 
     def _summary(self) -> RunSummary:
         return RunSummary(
@@ -304,5 +324,6 @@ class AutotaggerPipeline:
             updated=self.updated_count,
             failed=self.failed_count,
             skipped=self.skipped_count,
+            skip_reasons=dict(sorted(self.skip_reasons.items())),
             total_cost=self.total_cost,
         )

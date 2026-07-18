@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from dataclasses import replace
 
 from autotagger.flickr_gateway import PartialUpdateError
@@ -106,6 +107,7 @@ def test_repeated_dry_run_keeps_cached_analysis_in_current_report(settings):
     assert analyzer.calls == []
     assert summary.records[0]["status"] == "analysed"
     assert summary.records[0]["cached_analysis"] is True
+    assert len(settings.checkpoint_file.read_text().splitlines()) == 1
 
 
 def test_existing_description_is_skipped(settings):
@@ -114,6 +116,12 @@ def test_existing_description_is_skipped(settings):
     summary = asyncio.run(AutotaggerPipeline(settings, flickr, analyzer).run(apply=True))
     assert analyzer.calls == []
     assert summary.skipped == 1
+    assert summary.skip_reasons == {"existing description": 1}
+    assert settings.checkpoint_file.read_text() == ""
+    report = json.loads(settings.updated_metadata_file.read_text())
+    assert len(report) == 1
+    assert report[0]["status"] == "run_summary"
+    assert report[0]["skip_reasons"] == {"existing description": 1}
 
 
 def test_duplicate_photo_ids_are_not_analyzed_twice(settings):
@@ -122,6 +130,7 @@ def test_duplicate_photo_ids_are_not_analyzed_twice(settings):
     summary = asyncio.run(AutotaggerPipeline(settings, flickr, analyzer).run(apply=False))
     assert analyzer.calls == ["1"]
     assert summary.skipped == 1
+    assert summary.skip_reasons == {"duplicate photo in this run": 1}
 
 
 def test_limit_bounds_new_analyses(settings):
