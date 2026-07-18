@@ -3,65 +3,177 @@ name: Autotag Photos
 on:
   workflow_dispatch:
     inputs:
+      apply_changes:
+        description: Apply generated metadata to Flickr
+        type: boolean
+        required: true
+        default: true
       openai_model:
-        description: 'OpenAI Model'
+        description: OpenAI model or Azure deployment name
         required: true
-        default: 'gpt-5-mini'
+        default: gpt-5-mini
       openai_prompt_cost:
-        description: 'OpenAI Cost per 1M Prompt Tokens'
+        description: Cost per 1M prompt tokens
         required: true
-        default: '0.25'
+        default: "0.25"
       openai_completion_cost:
-        description: 'OpenAI Cost per 1M Completion Tokens'
+        description: Cost per 1M completion tokens
         required: true
-        default: '2.00'
+        default: "2.00"
       openai_vision_cost:
-        description: 'OpenAI Vision Cost per Image'
+        description: Fixed cost per image
         required: true
-        default: '0.0'
+        default: "0.0"
+      openai_max_output_tokens:
+        description: Maximum output tokens per image
+        required: true
+        default: "800"
+      analysis_concurrency:
+        description: Concurrent OpenAI analyses
+        required: true
+        default: "3"
       flickr_image_url:
-          description: 'Flickr Image URL (default: url_m)'
-          required: true
-          default: 'url_m'
-      flickr_privacy_filter:
-        description: 'Flickr Privacy Filter (default: public)'
+        description: Flickr image URL extra
         required: true
-        default: '1'
+        default: url_m
+      flickr_privacy_filter:
+        description: Flickr privacy filter (all or 1-5)
+        required: true
+        default: "1"
+      flickr_photoset_id:
+        description: Optional single photoset ID
+        required: false
+        default: ""
+      tag_mode:
+        description: Preserve existing tags or replace them
+        type: choice
+        required: true
+        default: merge
+        options:
+          - merge
+          - replace
+      update_fields:
+        description: Comma-separated fields (title,description,tags)
+        required: true
+        default: title,description,tags
+      max_photos:
+        description: Optional maximum number of new analyses
+        required: false
+        default: ""
+      max_total_cost:
+        description: Optional recorded OpenAI cost limit
+        required: false
+        default: ""
+      resume:
+        description: Reuse the most recent workflow checkpoint
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flickr-autotagger-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
   flickr-autotagger:
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/vscode/devcontainers/python:3.12
+    timeout-minutes: 360
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.lock
 
-    - name: Run Flickr Autotagger
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        FLICKR_API_KEY: ${{ secrets.FLICKR_API_KEY }}
-        FLICKR_API_SECRET: ${{ secrets.FLICKR_API_SECRET }}
-        FLICKR_OAUTH_TOKEN: ${{ secrets.FLICKR_OAUTH_TOKEN }}
-        OPENAI_MODEL: ${{ github.event.inputs.openai_model }}
-        OPENAI_COST_PER_1M_PROMPT_TOKEN: ${{ github.event.inputs.openai_prompt_cost }}
-        OPENAI_COST_PER_1M_COMPLETION_TOKEN: ${{ github.event.inputs.openai_completion_cost }}
-        OPENAI_VISION_COST_PER_IMAGE: ${{ github.event.inputs.openai_vision_cost }}
-        FLICKR_IMAGE_URL: ${{ github.event.inputs.flickr_image_url }}
-        FLICKR_PRIVACY_FILTER: ${{ github.event.inputs.flickr_privacy_filter }}
-      run: |
-        python flickr-autotagger.py
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --requirement requirements.lock
+          python -m pip install --no-build-isolation --no-deps .
 
-    - name: Upload Metadata File
-      if: success()
-      continue-on-error: true
-      uses: actions/upload-artifact@v4
-      with:
-        name: updated-metadata
-        path: updated_metadata.json
+      - name: Verify package
+        run: |
+          ruff check .
+          ruff format --check .
+          pytest
 
-        if-no-files-found: ignore
+      - name: Restore prior checkpoint
+        if: ${{ inputs.resume }}
+        uses: actions/cache/restore@v4
+        with:
+          path: .autotagger-checkpoint.jsonl
+          key: autotagger-checkpoint-${{ github.run_id }}
+          restore-keys: |
+            autotagger-checkpoint-
+
+      - name: Run Flickr Autotagger
+        env:
+          APPLY_CHANGES: ${{ inputs.apply_changes }}
+          RESUME: ${{ inputs.resume }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+          OPENAI_PROVIDER: ${{ vars.OPENAI_PROVIDER || 'openai' }}
+          OPENAI_INSTRUCTION_ROLE: ${{ vars.OPENAI_INSTRUCTION_ROLE || 'developer' }}
+          OPENAI_TOKENS_PARAMETER: ${{ vars.OPENAI_TOKENS_PARAMETER || 'max_completion_tokens' }}
+          OPENAI_JSON_MODE: ${{ vars.OPENAI_JSON_MODE || 'true' }}
+          OPENAI_IMAGE_DETAIL: ${{ vars.OPENAI_IMAGE_DETAIL || 'low' }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          OPENAI_API_VERSION: ${{ vars.OPENAI_API_VERSION }}
+          FLICKR_API_KEY: ${{ secrets.FLICKR_API_KEY }}
+          FLICKR_API_SECRET: ${{ secrets.FLICKR_API_SECRET }}
+          FLICKR_OAUTH_TOKEN: ${{ secrets.FLICKR_OAUTH_TOKEN }}
+          OPENAI_MODEL: ${{ inputs.openai_model }}
+          OPENAI_COST_PER_1M_PROMPT_TOKEN: ${{ inputs.openai_prompt_cost }}
+          OPENAI_COST_PER_1M_COMPLETION_TOKEN: ${{ inputs.openai_completion_cost }}
+          OPENAI_VISION_COST_PER_IMAGE: ${{ inputs.openai_vision_cost }}
+          OPENAI_MAX_OUTPUT_TOKENS: ${{ inputs.openai_max_output_tokens }}
+          ANALYSIS_CONCURRENCY: ${{ inputs.analysis_concurrency }}
+          FLICKR_IMAGE_URL: ${{ inputs.flickr_image_url }}
+          FLICKR_PRIVACY_FILTER: ${{ inputs.flickr_privacy_filter }}
+          FLICKR_PHOTOSET_ID: ${{ inputs.flickr_photoset_id }}
+          TAG_MODE: ${{ inputs.tag_mode }}
+          UPDATE_FIELDS: ${{ inputs.update_fields }}
+          MAX_PHOTOS: ${{ inputs.max_photos }}
+          MAX_TOTAL_COST: ${{ inputs.max_total_cost }}
+          MAX_KEYWORDS: ${{ vars.MAX_KEYWORDS || '10' }}
+          MAX_TITLE_CHARS: ${{ vars.MAX_TITLE_CHARS || '120' }}
+          MAX_DESCRIPTION_CHARS: ${{ vars.MAX_DESCRIPTION_CHARS || '1200' }}
+          METADATA_LANGUAGE: ${{ vars.METADATA_LANGUAGE || 'English' }}
+          DESCRIPTION_STYLE: ${{ vars.DESCRIPTION_STYLE || 'detailed, factual, and concise' }}
+          DESCRIPTION_POLICY: ${{ vars.DESCRIPTION_POLICY || 'missing-or-placeholder' }}
+          DESCRIPTIONS_TO_ANALYZE: ${{ vars.DESCRIPTIONS_TO_ANALYZE }}
+          SKIP_PREFIX: ${{ vars.SKIP_PREFIX }}
+          PHOTOSET_ALLOWLIST: ${{ vars.PHOTOSET_ALLOWLIST }}
+          PHOTOSET_DENYLIST: ${{ vars.PHOTOSET_DENYLIST }}
+          PROMPT_FILE: ${{ vars.PROMPT_FILE }}
+        run: |
+          arguments=()
+          if [[ "$APPLY_CHANGES" == "true" ]]; then
+            arguments+=(--apply)
+          fi
+          python flickr-autotagger.py "${arguments[@]}"
+
+      - name: Save checkpoint
+        if: ${{ always() && inputs.resume && hashFiles('.autotagger-checkpoint.jsonl') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .autotagger-checkpoint.jsonl
+          key: autotagger-checkpoint-${{ github.run_id }}
+
+      - name: Upload run report and checkpoint
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: autotagger-run-${{ github.run_id }}
+          path: |
+            updated_metadata.json
+            .autotagger-checkpoint.jsonl
+          if-no-files-found: ignore
+          retention-days: 30

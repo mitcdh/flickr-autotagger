@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=9.1.1,<10
+ruff>=0.15.20,<0.16
+setuptools>=77,<84
+wheel>=0.45,<1
